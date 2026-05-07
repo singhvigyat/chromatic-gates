@@ -49,6 +49,9 @@ public final class Game {
      */
     private float lastSpawnedGapCenterX;
 
+    /** Required color on the most recently spawned gate (for occasional same-color follow-up rows). */
+    private Gate.Channel lastSpawnedRequired;
+
     public Game(Renderer2D renderer, Input input) {
         this.renderer = renderer;
         this.input = input;
@@ -56,6 +59,7 @@ public final class Game {
         float startY = GameConfig.PLAYER_BASELINE_Y_PX;
         this.player = new Player(startX, startY);
         this.lastSpawnedGapCenterX = GameConfig.WINDOW_WIDTH_PX * 0.5f;
+        this.lastSpawnedRequired = null;
 
         seedInitialGateStack();
     }
@@ -163,10 +167,12 @@ public final class Game {
                     GameConfig.WINDOW_WIDTH_PX,
                     newY,
                     lastSpawnedGapCenterX,
-                    maxReachPxForCurrentSpeed()
+                    maxReachPxForCurrentSpeed(),
+                    lastSpawnedRequired
             );
             gates.add(g);
             lastSpawnedGapCenterX = g.getGapCenterX();
+            lastSpawnedRequired = g.getRequired();
             highestGateYBottom = newY;
         }
     }
@@ -178,21 +184,24 @@ public final class Game {
     private float maxReachPxForCurrentSpeed() {
         float v = Math.max(1f, gateSpeedPxPerSec);
         float secondsBetweenRows = GameConfig.GATE_SPAWN_SPACING_PX / v;
-        return GameConfig.PLAYER_MOVE_SPEED_PX_PER_SEC * secondsBetweenRows * GameConfig.GATE_GAP_REACH_SAFETY;
+        float raw = GameConfig.PLAYER_MOVE_SPEED_PX_PER_SEC * secondsBetweenRows * GameConfig.GATE_GAP_REACH_SAFETY;
+        return Math.max(56f, raw - GameConfig.GATE_GAP_REACH_LAYOUT_FUDGE_PX);
     }
 
-    /** Clears and spawns the starting stack; updates {@link #lastSpawnedGapCenterX}. */
+    /** Clears and spawns the starting stack; updates {@link #lastSpawnedGapCenterX} and required color. */
     private void seedInitialGateStack() {
         gates.clear();
         highestGateYBottom = -10_000f;
+        lastSpawnedRequired = null;
         float y = GameConfig.WINDOW_HEIGHT_PX + 40f;
         float worldW = GameConfig.WINDOW_WIDTH_PX;
         for (int i = 0; i < 4; i++) {
             Gate g = (i == 0)
                     ? Gate.create(rng, worldW, y)
-                    : Gate.create(rng, worldW, y, lastSpawnedGapCenterX, maxReachPxForCurrentSpeed());
+                    : Gate.create(rng, worldW, y, lastSpawnedGapCenterX, maxReachPxForCurrentSpeed(), lastSpawnedRequired);
             gates.add(g);
             lastSpawnedGapCenterX = g.getGapCenterX();
+            lastSpawnedRequired = g.getRequired();
             highestGateYBottom = Math.max(highestGateYBottom, g.getYBottom());
             y += GameConfig.GATE_SPAWN_SPACING_PX;
         }

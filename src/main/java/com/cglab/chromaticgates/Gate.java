@@ -134,17 +134,24 @@ public final class Gate {
     }
 
     /**
-     * Later rows: gap center stays within {@code maxReachPx} of {@code previousGapCenterX} so the
-     * player can always cross in time at the current fall speed (avoids impossible left↔right chains).
+     * Later rows: gap center stays within {@code maxReachPx} of {@code previousGapCenterX}, biased
+     * toward staying near that center; required color sometimes repeats the previous row so movement
+     * and color changes are not both demanding every beat.
      */
     public static Gate create(
             Random rng,
             float worldWidthPx,
             float yBottom,
             float previousGapCenterX,
-            float maxReachPx
+            float maxReachPx,
+            Channel previousRowRequiredOrNull
     ) {
-        Channel need = Channel.random(rng);
+        Channel need;
+        if (previousRowRequiredOrNull != null && rng.nextFloat() < GameConfig.GATE_SAME_COLOR_REPEAT_CHANCE) {
+            need = previousRowRequiredOrNull;
+        } else {
+            need = Channel.random(rng);
+        }
         float gapW = randomGapWidth(rng);
         float margin = 48f;
         float legalLMin = margin;
@@ -156,8 +163,15 @@ public final class Gate {
         float wantCMax = previousGapCenterX + maxReachPx;
         float cLo = Math.max(centerMin, wantCMin);
         float cHi = Math.min(centerMax, wantCMax);
+
+        float sticky = maxReachPx * GameConfig.GATE_NEXT_GAP_STICKY_FRACTION;
+        float iLo = Math.max(cLo, previousGapCenterX - sticky);
+        float iHi = Math.min(cHi, previousGapCenterX + sticky);
+
         float center;
-        if (cLo <= cHi) {
+        if (iLo <= iHi && (iHi - iLo) >= 6f) {
+            center = iLo + rng.nextFloat() * (iHi - iLo);
+        } else if (cLo <= cHi) {
             center = cLo + rng.nextFloat() * (cHi - cLo);
         } else {
             center = clamp(previousGapCenterX, centerMin, centerMax);

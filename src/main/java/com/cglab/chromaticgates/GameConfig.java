@@ -37,10 +37,10 @@ public final class GameConfig {
     public static final float GATE_START_SPEED_PX_PER_SEC = 110f;
 
     /** How much gate speed increases after each successful pass. */
-    public static final float GATE_SPEED_STEP_PX_PER_SEC = 6f;
+    public static final float GATE_SPEED_STEP_PX_PER_SEC = 4f;
 
     /** Maximum gate fall speed so the game stays fair on long runs. */
-    public static final float GATE_MAX_SPEED_PX_PER_SEC = 260f;
+    public static final float GATE_MAX_SPEED_PX_PER_SEC = 220f;
 
     /** Vertical thickness of the solid "wall" segments on each gate row. */
     public static final float GATE_BAND_HEIGHT_PX = 36f;
@@ -51,15 +51,26 @@ public final class GameConfig {
     /** Maximum width of the gap (early gates are more forgiving). */
     public static final float GATE_GAP_MAX_WIDTH_PX = 200f;
 
-    /** Vertical distance between spawned gate rows. */
-    public static final float GATE_SPAWN_SPACING_PX = 200f;
+    /** Vertical distance between spawned gate rows (larger = more time to move + change color). */
+    public static final float GATE_SPAWN_SPACING_PX = 265f;
 
     /**
-     * When placing a new gate, its gap center must lie within this fraction of the maximum distance
-     * you could theoretically move horizontally while the next row descends by {@link #GATE_SPAWN_SPACING_PX}.
-     * Slightly under 1 so edge cases stay fair.
+     * Upper bound on horizontal travel budget (fraction of theoretical reach) so gap centers stay
+     * realistically reachable once ship width and alignment are accounted for in code.
      */
-    public static final float GATE_GAP_REACH_SAFETY = 0.88f;
+    public static final float GATE_GAP_REACH_SAFETY = 0.68f;
+
+    /**
+     * When picking the next gap center, prefer staying within this fraction of {@code maxReachPx}
+     * of the previous center so rows rarely land on opposite screen edges in one beat.
+     */
+    public static final float GATE_NEXT_GAP_STICKY_FRACTION = 0.48f;
+
+    /** Chance the next row reuses the previous row's required color (less frantic 1/2/3 tapping). */
+    public static final float GATE_SAME_COLOR_REPEAT_CHANCE = 0.4f;
+
+    /** Pixels reserved inside the reach budget (ship width + a little slack to sit inside the hole). */
+    public static final float GATE_GAP_REACH_LAYOUT_FUDGE_PX = PLAYER_WIDTH_PX + 56f;
 
     /** Seconds of invulnerability after a mistake (prevents double penalties). */
     public static final float HURT_INVULN_SECONDS = 1.1f;
