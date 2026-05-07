@@ -87,10 +87,19 @@ After `mvn package`, Maven produces `target/chromatic-gates-1.0-SNAPSHOT.jar`. D
 | Action | Keys |
 |--------|------|
 | Move left / right | **A** / **D** or **←** / **→** |
-| Select player color | **1** red · **2** green · **3** blue |
+| Select player color | **1**/**2**/**3** (top row or keypad) · **Q** red · **W** green · **E** blue |
 | Restart run | **R** |
 
 Close the window to quit.
+
+### How to play
+
+1. **Click the game window** so keyboard input goes to the game (not the terminal or browser).
+2. Each falling row is dark **walls** with a **colored gap**. The gap color is the one you must match.
+3. Use **1/2/3** (or keypad, or **Q/W/E**) so your **ship color** matches the **gap color**. The top HUD shows three chips; the one with the **gold border** is your current color.
+4. Move with **A/D** (or arrows) so you pass through the **gap**, not the walls.
+5. Passing through the gap with the **wrong** ship color costs a life, same as hitting a wall. Match first, then slide through.
+6. Press **R** to restart after game over or anytime you want a fresh run.
 
 ---
 

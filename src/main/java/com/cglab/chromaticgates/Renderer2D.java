@@ -1,6 +1,7 @@
 package com.cglab.chromaticgates;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 
 import java.nio.FloatBuffer;
 
@@ -132,6 +133,16 @@ public final class Renderer2D {
     public void drawHudBackground() {
         float h = 86f;
         drawRect(0f, viewportH - h, viewportW, viewportH, 0f, 0f, 0f, 0.35f);
+    }
+
+    /** Default alpha blend for UI and solid layers. */
+    public void setBlendNormal() {
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    /** Additive blend for glow passes (restores {@link #setBlendNormal()} after drawing). */
+    public void setBlendAdditive() {
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
     }
 
     public void dispose() {

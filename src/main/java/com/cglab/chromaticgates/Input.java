@@ -71,20 +71,35 @@ public final class Input {
     }
 
     /**
-     * Color selection keys: 1 = red channel, 2 = green, 3 = blue.
-     * These are read directly in {@link Game} so we can detect "just pressed" with edge logic if we extend later.
+     * Color selection: top-row digits, keypad digits, or Q/W/E (same order as 1/2/3).
+     * <p>
+     * Numpad and Q/W/E are included because laptop layouts and Num Lock can make “1–3 do nothing”
+     * when only the main-row codes are polled.
      */
-    public boolean isColorKeyJustPressed(int channelIndex) {
-        int key = switch (channelIndex) {
-            case 0 -> GLFW.GLFW_KEY_1;
-            case 1 -> GLFW.GLFW_KEY_2;
-            case 2 -> GLFW.GLFW_KEY_3;
-            default -> GLFW.GLFW_KEY_UNKNOWN;
-        };
-        if (key == GLFW.GLFW_KEY_UNKNOWN) {
-            return false;
+    public boolean isColorSelectPressed(int channelIndex) {
+        int digit;
+        int keypad;
+        int letter;
+        switch (channelIndex) {
+            case 0 -> {
+                digit = GLFW.GLFW_KEY_1;
+                keypad = GLFW.GLFW_KEY_KP_1;
+                letter = GLFW.GLFW_KEY_Q;
+            }
+            case 1 -> {
+                digit = GLFW.GLFW_KEY_2;
+                keypad = GLFW.GLFW_KEY_KP_2;
+                letter = GLFW.GLFW_KEY_W;
+            }
+            case 2 -> {
+                digit = GLFW.GLFW_KEY_3;
+                keypad = GLFW.GLFW_KEY_KP_3;
+                letter = GLFW.GLFW_KEY_E;
+            }
+            default -> {
+                return false;
+            }
         }
-        // GLFW_PRESS fires every frame while held; for color switching, holding is OK (idempotent).
-        return isPressed(key);
+        return isPressed(digit) || isPressed(keypad) || isPressed(letter);
     }
 }

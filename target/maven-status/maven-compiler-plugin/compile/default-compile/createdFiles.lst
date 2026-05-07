@@ -1,0 +1,9 @@
+com\cglab\chromaticgates\Gate$Channel.class
+com\cglab\chromaticgates\Gate.class
+com\cglab\chromaticgates\Game.class
+com\cglab\chromaticgates\GameConfig.class
+com\cglab\chromaticgates\Renderer2D.class
+com\cglab\chromaticgates\Main.class
+com\cglab\chromaticgates\Player.class
+com\cglab\chromaticgates\Input.class
+com\cglab\chromaticgates\ShaderProgram.class

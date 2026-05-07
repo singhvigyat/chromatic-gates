@@ -76,14 +76,14 @@ public final class Game {
             return;
         }
 
-        // --- Color selection (1/2/3 keys) ---
-        if (input.isColorKeyJustPressed(0)) {
+        // --- Color selection (1/2/3, keypad, or Q/W/E) ---
+        if (input.isColorSelectPressed(0)) {
             player.setColorChannel(0);
         }
-        if (input.isColorKeyJustPressed(1)) {
+        if (input.isColorSelectPressed(1)) {
             player.setColorChannel(1);
         }
-        if (input.isColorKeyJustPressed(2)) {
+        if (input.isColorSelectPressed(2)) {
             player.setColorChannel(2);
         }
 
@@ -122,14 +122,20 @@ public final class Game {
             drawGate(gate);
         }
 
-        // Player ship: tinted by selected channel.
+        // Player ship: tinted by selected channel (outline so it separates from the playfield).
         Gate.Channel shipColor = channelFromIndex(player.getColorChannel());
-        float pulse = 0.85f + 0.15f * (float) Math.sin(System.nanoTime() * 1e-9 * 6.0);
+        float pulse = 0.78f + 0.22f * (float) Math.sin(System.nanoTime() * 1e-9 * 6.0);
+        float px0 = player.minX();
+        float py0 = player.minY();
+        float px1 = player.maxX();
+        float py1 = player.maxY();
+        float outline = 4f;
+        renderer.drawRect(px0 - outline, py0 - outline, px1 + outline, py1 + outline, 0.02f, 0.02f, 0.04f, 0.92f);
         renderer.drawRect(
-                player.minX(),
-                player.minY(),
-                player.maxX(),
-                player.maxY(),
+                px0,
+                py0,
+                px1,
+                py1,
                 shipColor.r * pulse,
                 shipColor.g * pulse,
                 shipColor.b * pulse,
@@ -279,11 +285,61 @@ public final class Game {
         // Right wall slab.
         renderer.drawRect(gapR, y0, w, y1, 0.12f, 0.12f, 0.14f, 1f);
 
-        // Gap "field": tinted requirement color with a soft outer glow (second rect, larger, transparent).
         Gate.Channel c = gate.getRequired();
-        renderer.drawRect(gapL, y0, gapR, y1, c.r * 0.35f, c.g * 0.35f, c.b * 0.35f, 0.55f);
-        float inset = 6f;
-        renderer.drawRect(gapL + inset, y0 + inset, gapR - inset, y1 - inset, c.r, c.g, c.b, 0.85f);
+        float t = (float) (System.nanoTime() * 1e-9);
+        float glowPulse = 0.88f + 0.12f * (float) Math.sin(t * 5.5f);
+
+        // Wide additive halo so the required hue reads as a "glow" against dark walls.
+        float expand = 24f;
+        renderer.setBlendAdditive();
+        renderer.drawRect(
+                gapL - expand,
+                y0 - 6f,
+                gapR + expand,
+                y1 + 6f,
+                c.r * 0.65f,
+                c.g * 0.65f,
+                c.b * 0.65f,
+                0.32f * glowPulse);
+        renderer.drawRect(
+                gapL - 12f,
+                y0 - 3f,
+                gapR + 12f,
+                y1 + 3f,
+                c.r,
+                c.g,
+                c.b,
+                0.38f * glowPulse);
+        renderer.setBlendNormal();
+
+        // Core fill: bright enough that red vs green vs blue is obvious.
+        renderer.drawRect(
+                gapL,
+                y0,
+                gapR,
+                y1,
+                c.r * 0.55f * glowPulse,
+                c.g * 0.55f * glowPulse,
+                c.b * 0.55f * glowPulse,
+                0.78f);
+        float inset = 5f;
+        renderer.drawRect(
+                gapL + inset,
+                y0 + inset,
+                gapR - inset,
+                y1 - inset,
+                c.r * glowPulse,
+                c.g * glowPulse,
+                c.b * glowPulse,
+                0.98f);
+
+        // Thin light bands on the gap — marks the "safe slot" even on muted displays.
+        float band = 3.5f;
+        float br = Math.min(1f, c.r + 0.35f);
+        float bg = Math.min(1f, c.g + 0.35f);
+        float bb = Math.min(1f, c.b + 0.35f);
+        renderer.drawRect(gapL, y0, gapR, y0 + band, br, bg, bb, 0.75f);
+        renderer.drawRect(gapL, y1 - band, gapR, y1, br, bg, bb, 0.65f);
     }
 
     private Gate.Channel channelFromIndex(int idx) {
@@ -302,9 +358,14 @@ public final class Game {
     }
 
     private void drawKeyChip(float x, float y, Gate.Channel ch, boolean active) {
-        float s = 44f;
-        float border = active ? 1f : 0.35f;
-        renderer.drawRect(x - 4f, y - 4f, x + s + 4f, y + s + 4f, border, border, border, 0.9f);
+        float s = 50f;
+        float pad = active ? 9f : 4f;
+        if (active) {
+            renderer.drawRect(x - pad - 3f, y - pad - 3f, x + s + pad + 3f, y + s + pad + 3f, 1f, 0.78f, 0.1f, 1f);
+            renderer.drawRect(x - pad, y - pad, x + s + pad, y + s + pad, 0.06f, 0.06f, 0.09f, 1f);
+        } else {
+            renderer.drawRect(x - 4f, y - 4f, x + s + 4f, y + s + 4f, 0.32f, 0.32f, 0.36f, 0.92f);
+        }
         renderer.drawRect(x, y, x + s, y + s, ch.r, ch.g, ch.b, 1f);
     }
 
