@@ -54,6 +54,13 @@ public final class GameConfig {
     /** Vertical distance between spawned gate rows. */
     public static final float GATE_SPAWN_SPACING_PX = 200f;
 
+    /**
+     * When placing a new gate, its gap center must lie within this fraction of the maximum distance
+     * you could theoretically move horizontally while the next row descends by {@link #GATE_SPAWN_SPACING_PX}.
+     * Slightly under 1 so edge cases stay fair.
+     */
+    public static final float GATE_GAP_REACH_SAFETY = 0.88f;
+
     /** Seconds of invulnerability after a mistake (prevents double penalties). */
     public static final float HURT_INVULN_SECONDS = 1.1f;
 

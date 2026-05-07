@@ -43,21 +43,21 @@ public final class Game {
     /** True when the run ended; press R to reset. */
     private boolean gameOver;
 
+    /**
+     * Horizontal center of the gap on the most recently spawned gate; used so the next gate’s gap
+     * is never placed farther than the player can move before that row arrives.
+     */
+    private float lastSpawnedGapCenterX;
+
     public Game(Renderer2D renderer, Input input) {
         this.renderer = renderer;
         this.input = input;
         float startX = GameConfig.WINDOW_WIDTH_PX * 0.5f;
         float startY = GameConfig.PLAYER_BASELINE_Y_PX;
         this.player = new Player(startX, startY);
+        this.lastSpawnedGapCenterX = GameConfig.WINDOW_WIDTH_PX * 0.5f;
 
-        // Seed a couple of gates so the screen is not empty at t=0.
-        float y = GameConfig.WINDOW_HEIGHT_PX + 40f;
-        for (int i = 0; i < 4; i++) {
-            Gate g = Gate.create(rng, GameConfig.WINDOW_WIDTH_PX, y);
-            gates.add(g);
-            highestGateYBottom = Math.max(highestGateYBottom, g.getYBottom());
-            y += GameConfig.GATE_SPAWN_SPACING_PX;
-        }
+        seedInitialGateStack();
     }
 
     /**
@@ -158,9 +158,43 @@ public final class Game {
         float topTarget = GameConfig.WINDOW_HEIGHT_PX + GameConfig.GATE_SPAWN_SPACING_PX;
         if (highestGateYBottom < topTarget) {
             float newY = highestGateYBottom + GameConfig.GATE_SPAWN_SPACING_PX;
-            Gate g = Gate.create(rng, GameConfig.WINDOW_WIDTH_PX, newY);
+            Gate g = Gate.create(
+                    rng,
+                    GameConfig.WINDOW_WIDTH_PX,
+                    newY,
+                    lastSpawnedGapCenterX,
+                    maxReachPxForCurrentSpeed()
+            );
             gates.add(g);
+            lastSpawnedGapCenterX = g.getGapCenterX();
             highestGateYBottom = newY;
+        }
+    }
+
+    /**
+     * Max horizontal distance between consecutive gap centers so the player can always cross in
+     * time: moveSpeed × (time for the next row to descend one spacing) × safety margin.
+     */
+    private float maxReachPxForCurrentSpeed() {
+        float v = Math.max(1f, gateSpeedPxPerSec);
+        float secondsBetweenRows = GameConfig.GATE_SPAWN_SPACING_PX / v;
+        return GameConfig.PLAYER_MOVE_SPEED_PX_PER_SEC * secondsBetweenRows * GameConfig.GATE_GAP_REACH_SAFETY;
+    }
+
+    /** Clears and spawns the starting stack; updates {@link #lastSpawnedGapCenterX}. */
+    private void seedInitialGateStack() {
+        gates.clear();
+        highestGateYBottom = -10_000f;
+        float y = GameConfig.WINDOW_HEIGHT_PX + 40f;
+        float worldW = GameConfig.WINDOW_WIDTH_PX;
+        for (int i = 0; i < 4; i++) {
+            Gate g = (i == 0)
+                    ? Gate.create(rng, worldW, y)
+                    : Gate.create(rng, worldW, y, lastSpawnedGapCenterX, maxReachPxForCurrentSpeed());
+            gates.add(g);
+            lastSpawnedGapCenterX = g.getGapCenterX();
+            highestGateYBottom = Math.max(highestGateYBottom, g.getYBottom());
+            y += GameConfig.GATE_SPAWN_SPACING_PX;
         }
     }
 
@@ -256,15 +290,7 @@ public final class Game {
         score = 0;
         lives = GameConfig.MAX_LIVES;
         gateSpeedPxPerSec = GameConfig.GATE_START_SPEED_PX_PER_SEC;
-        gates.clear();
-        highestGateYBottom = -10_000f;
-        float y = GameConfig.WINDOW_HEIGHT_PX + 40f;
-        for (int i = 0; i < 4; i++) {
-            Gate g = Gate.create(rng, GameConfig.WINDOW_WIDTH_PX, y);
-            gates.add(g);
-            highestGateYBottom = Math.max(highestGateYBottom, g.getYBottom());
-            y += GameConfig.GATE_SPAWN_SPACING_PX;
-        }
+        seedInitialGateStack();
         player.setColorChannel(0);
         // Re-center the ship so each run starts fair after horizontal drift.
         player.applyHorizontalDelta(

@@ -99,6 +99,11 @@ public final class Gate {
         return gapLeft + gapWidth;
     }
 
+    /** Horizontal center of the gap opening (pixels). */
+    public float getGapCenterX() {
+        return gapLeft + gapWidth * 0.5f;
+    }
+
     public boolean isWrongColorPenaltyApplied() {
         return wrongColorPenaltyApplied;
     }
@@ -116,18 +121,63 @@ public final class Gate {
     }
 
     /**
-     * Factory that randomizes gap placement and required color for variety each spawn.
+     * First row of a run: gap position is uniform (anywhere legal).
      *
      * @param worldWidthPx right edge of the 2D world in pixels
      * @param yBottom      bottom edge of the gate band in pixels
      */
     public static Gate create(Random rng, float worldWidthPx, float yBottom) {
         Channel need = Channel.random(rng);
-        float gapW = GameConfig.GATE_GAP_MIN_WIDTH_PX
+        float gapW = randomGapWidth(rng);
+        float gapLeft = randomGapLeftUniform(rng, worldWidthPx, gapW);
+        return new Gate(yBottom, gapLeft, gapW, need);
+    }
+
+    /**
+     * Later rows: gap center stays within {@code maxReachPx} of {@code previousGapCenterX} so the
+     * player can always cross in time at the current fall speed (avoids impossible left↔right chains).
+     */
+    public static Gate create(
+            Random rng,
+            float worldWidthPx,
+            float yBottom,
+            float previousGapCenterX,
+            float maxReachPx
+    ) {
+        Channel need = Channel.random(rng);
+        float gapW = randomGapWidth(rng);
+        float margin = 48f;
+        float legalLMin = margin;
+        float legalLMax = worldWidthPx - gapW - margin;
+        float centerMin = legalLMin + gapW * 0.5f;
+        float centerMax = legalLMax + gapW * 0.5f;
+
+        float wantCMin = previousGapCenterX - maxReachPx;
+        float wantCMax = previousGapCenterX + maxReachPx;
+        float cLo = Math.max(centerMin, wantCMin);
+        float cHi = Math.min(centerMax, wantCMax);
+        float center;
+        if (cLo <= cHi) {
+            center = cLo + rng.nextFloat() * (cHi - cLo);
+        } else {
+            center = clamp(previousGapCenterX, centerMin, centerMax);
+        }
+        float gapLeft = center - gapW * 0.5f;
+        return new Gate(yBottom, gapLeft, gapW, need);
+    }
+
+    private static float randomGapWidth(Random rng) {
+        return GameConfig.GATE_GAP_MIN_WIDTH_PX
                 + rng.nextFloat() * (GameConfig.GATE_GAP_MAX_WIDTH_PX - GameConfig.GATE_GAP_MIN_WIDTH_PX);
+    }
+
+    private static float randomGapLeftUniform(Random rng, float worldWidthPx, float gapW) {
         float margin = 48f;
         float maxLeft = worldWidthPx - gapW - margin;
-        float gapLeft = margin + rng.nextFloat() * Math.max(1f, (maxLeft - margin));
-        return new Gate(yBottom, gapLeft, gapW, need);
+        return margin + rng.nextFloat() * Math.max(1f, (maxLeft - margin));
+    }
+
+    private static float clamp(float v, float lo, float hi) {
+        return Math.max(lo, Math.min(hi, v));
     }
 }
