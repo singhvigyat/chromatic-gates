@@ -141,6 +141,3 @@ This repository’s `pom.xml` lists LWJGL artifacts with **`natives-windows`**. 
 
 ---
 
-## License
-
-Add a license file if you distribute this project publicly.
